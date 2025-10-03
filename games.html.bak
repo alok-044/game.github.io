@@ -1,0 +1,184 @@
+<!DOCTYPE html>
+<html>
+    <head>
+        <meta charset="utf-8">
+        <meta name="viewport" content="width=device-width,initial-scale=1">
+        <title>Games</title>
+        <link rel="stylesheet" href="style.css">
+    </head>
+    <body>
+        <main class="app">
+            <header>
+                <h1>Games — Game 1: Doodle Jump</h1>
+            </header>
+
+            <section class="game-card">
+                <div class="controls">
+                    <label for="Name">Player name:</label>
+                    <input type="text" id="Name" name="Name" placeholder="Your name">
+                    <button id="startBtn" type="button">Start / Restart</button>
+                    <button id="pauseBtn" type="button">Pause</button>
+                </div>
+
+                <div class="game-wrap">
+                    <canvas id="doodle" width="400" height="600" aria-label="Doodle Jump game"></canvas>
+                    <div class="hud">Score: <span id="score">0</span></div>
+                </div>
+
+                <p class="hint">Use ← → or A / D to move. Tap left/right on mobile.</p>
+            </section>
+        </main>
+
+        <script>
+        // Minimal Doodle Jump clone
+        (function(){
+            const canvas = document.getElementById('doodle');
+            const ctx = canvas.getContext('2d');
+            const scoreEl = document.getElementById('score');
+            const startBtn = document.getElementById('startBtn');
+            const pauseBtn = document.getElementById('pauseBtn');
+
+            const W = canvas.width, H = canvas.height;
+            let platforms = [], player, keys = {}, score = 0, running = false, raf;
+
+            function rand(min,max){ return Math.random()*(max-min)+min }
+
+            function createPlatforms(){
+                platforms = [];
+                const gap = 100;
+                for(let i=0;i<8;i++){
+                    platforms.push({
+                        x: rand(20, W-80),
+                        y: H - i*gap,
+                        w: 80,
+                        h: 12
+                    });
+                }
+            }
+
+            function reset(){
+                player = { x: W/2-20, y: H-120, w: 40, h: 40, vy: 0 };
+                score = 0;
+                createPlatforms();
+                scoreEl.textContent = score;
+            }
+
+            function update(){
+                // input
+                const speed = 4;
+                if(keys.left) player.x -= speed;
+                if(keys.right) player.x += speed;
+                // wrap
+                if(player.x > W) player.x = -player.w;
+                if(player.x + player.w < 0) player.x = W;
+
+                // physics
+                const gravity = 0.35;
+                player.vy += gravity;
+                player.y += player.vy;
+
+                // collision (only when falling)
+                if(player.vy > 0){
+                    for(let p of platforms){
+                        if(player.x + player.w > p.x && player.x < p.x + p.w){
+                            if(player.y + player.h > p.y && player.y + player.h < p.y + p.h + player.vy){
+                                player.vy = -10 - Math.min(score/100,6); // stronger jumps as score increases slightly
+                                player.y = p.y - player.h;
+                            }
+                        }
+                    }
+                }
+
+                // scroll up when player reaches upper third
+                if(player.y < H/3){
+                    const dy = (H/3) - player.y;
+                    player.y = H/3;
+                    for(let p of platforms){
+                        p.y += dy;
+                    }
+                    score += Math.floor(dy);
+                    scoreEl.textContent = Math.max(score,0);
+                }
+
+                // recycle platforms and add new ones
+                for(let i=platforms.length-1;i>=0;i--){
+                    if(platforms[i].y > H){
+                        platforms.splice(i,1);
+                        platforms.push({ x: rand(10,W-90), y: -20, w: 80, h: 12 });
+                    }
+                }
+
+                // game over
+                if(player.y > H){
+                    running = false;
+                    cancelAnimationFrame(raf);
+                    ctx.fillStyle = 'rgba(0,0,0,0.5)';
+                    ctx.fillRect(0,0,W,H);
+                    ctx.fillStyle = '#fff'; ctx.font = '22px Arial'; ctx.textAlign='center';
+                    ctx.fillText('Game Over — Score: ' + score, W/2, H/2 - 10);
+                    ctx.fillText('Click Start to play again', W/2, H/2 + 24);
+                }
+            }
+
+            function draw(){
+                // background gradient already set by CSS but clear anyway
+                ctx.clearRect(0,0,W,H);
+                // draw platforms
+                for(let p of platforms){
+                    ctx.fillStyle = '#6fbf73';
+                    ctx.fillRect(p.x, p.y, p.w, p.h);
+                    ctx.strokeStyle = 'rgba(0,0,0,0.08)';
+                    ctx.strokeRect(p.x, p.y, p.w, p.h);
+                }
+                // draw player
+                ctx.fillStyle = '#ff6b6b';
+                ctx.fillRect(player.x, player.y, player.w, player.h);
+                // eyes
+                ctx.fillStyle = '#fff';
+                ctx.fillRect(player.x+8, player.y+10, 6,6);
+                ctx.fillRect(player.x+26, player.y+10, 6,6);
+            }
+
+            function loop(){
+                update();
+                draw();
+                if(running) raf = requestAnimationFrame(loop);
+            }
+
+            // input
+            window.addEventListener('keydown', e=>{
+                if(e.key === 'ArrowLeft' || e.key === 'a') keys.left = true;
+                if(e.key === 'ArrowRight' || e.key === 'd') keys.right = true;
+            });
+            window.addEventListener('keyup', e=>{
+                if(e.key === 'ArrowLeft' || e.key === 'a') keys.left = false;
+                if(e.key === 'ArrowRight' || e.key === 'd') keys.right = false;
+            });
+
+            // simple touch input: split canvas in half
+            canvas.addEventListener('touchstart', e=>{
+                e.preventDefault();
+                const t = e.touches[0];
+                const rect = canvas.getBoundingClientRect();
+                const x = t.clientX - rect.left;
+                keys.left = x < rect.width/2;
+                keys.right = x >= rect.width/2;
+            }, {passive:false});
+            canvas.addEventListener('touchend', e=>{ keys.left = keys.right = false; });
+
+            startBtn.addEventListener('click', ()=>{
+                reset();
+                if(!running){ running = true; loop(); }
+            });
+            pauseBtn.addEventListener('click', ()=>{
+                running = !running;
+                if(running) loop();
+            });
+
+            // initialize once
+            reset();
+            draw();
+        })();
+        </script>
+    </body>
+</html>

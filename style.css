@@ -1,0 +1,50 @@
+/* Basic layout */
+*{box-sizing:border-box}
+body{font-family:Arial, Helvetica, sans-serif;background:linear-gradient(#cfe9ff,#f7fbff);margin:0;padding:20px;color:#222}
+.app{max-width:900px;margin:0 auto}
+header h1{font-size:20px;margin:0 0 12px}
+.game-card{background:rgba(255,255,255,0.9);padding:16px;border-radius:8px;box-shadow:0 4px 12px rgba(0,0,0,0.06)}
+.controls{display:flex;gap:8px;align-items:center;margin-bottom:12px}
+.controls input{padding:6px;border:1px solid #ddd;border-radius:4px}
+.controls button{padding:8px 12px;border:0;border-radius:6px;background:#2a6fbd;color:#fff;cursor:pointer}
+.controls button:active{transform:translateY(1px)}
+.game-wrap{position:relative;width:400px;margin:0 auto}
+canvas{display:block;width:100%;height:auto;border-radius:6px;background:linear-gradient(#a7e0ff,#ffffff)}
+.hud{position:absolute;left:8px;top:8px;background:rgba(0,0,0,0.45);color:#fff;padding:6px 8px;border-radius:6px;font-weight:600}
+.hint{font-size:13px;color:#666;text-align:center;margin-top:8px}
+
+@media (max-width:480px){
+	.game-wrap{width:320px}
+}
+
+/* Games selection page styles */
+h1{font-size:28px;margin:0 0 12px;color:#123}
+.options{display:flex;flex-wrap:wrap;gap:10px;margin:12px 0}
+.option-btn{padding:10px 14px;border-radius:8px;border:1px solid rgba(0,0,0,0.12);background:linear-gradient(#fff,#f3f6fb);cursor:pointer;box-shadow:0 2px 6px rgba(0,0,0,0.04);font-weight:600}
+.option-btn:hover{transform:translateY(-2px);box-shadow:0 6px 18px rgba(0,0,0,0.08)}
+.option-btn:active{transform:translateY(0)}
+
+/* Visible option section (script toggles display:block) */
+.option-section .game-card{max-width:420px;margin:12px auto}
+
+/* Center page content */
+body{display:flex;flex-direction:column;align-items:center}
+.options{justify-content:center}
+
+/* Responsive canvas sizing: keep internal resolution but scale to fit available width */
+.game-wrap{width:360px;max-width:92vw}
+canvas{width:100%;height:auto}
+
+@media (max-width:420px){
+	h1{font-size:20px}
+	.option-btn{padding:8px 10px}
+}
+
+/* Whac A Mole styles */
+#board-mole{display:grid;grid-template-columns:repeat(3,100px);grid-template-rows:repeat(3,100px);gap:10px;justify-content:center}
+.mole-tile{background:linear-gradient(#fff,#eee);border-radius:8px;display:flex;align-items:center;justify-content:center;box-shadow:0 2px 6px rgba(0,0,0,0.06);cursor:pointer}
+.mole-tile img{max-width:80%;max-height:80%;display:block}
+
+@media (max-width:480px){
+	#board-mole{grid-template-columns:repeat(3,28vw);grid-template-rows:repeat(3,28vw)}
+}

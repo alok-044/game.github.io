@@ -1,0 +1,540 @@
+<!DOCTYPE html>
+<html>
+    <head>
+        <meta charset="utf-8">
+        <meta name="viewport" content="width=device-width,initial-scale=1">
+        <title>Games</title>
+        <link rel="stylesheet" href="style.css">
+    </head>
+    <body>
+        <h1>Choose a game</h1>
+        <div class="options">
+            <button type="button" class="option-btn" onclick="showOptionSection(1)">Doodle Jump</button>
+            <button type="button" class="option-btn" onclick="showOptionSection(2)">Whac A Mole</button>
+            <button type="button" class="option-btn" onclick="showOptionSection(3)">Flappy Bird</button>
+        </div>
+
+        <style>
+            /* simple option UI */
+            .option-section{display:none}
+            .options{display:flex;gap:8px;margin:12px 0}
+            .option-btn{padding:8px 12px;border-radius:6px;border:1px solid #888;background:#fff;cursor:pointer}
+        </style>
+
+        <!-- Option sections: only the chosen one is shown -->
+        <section id="option-1" class="option-section">
+            <main class="app">
+                <header>
+                    <h1>Game 1: Doodle Jump</h1>
+                </header>
+
+                <section class="game-card">
+                    <div class="game-wrap">
+                        <canvas id="board" width="360" height="576" aria-label="Doodle Jump board"></canvas>
+                    </div>
+
+                    <p class="hint">Use ← → or A / D to move. Press Space to restart on Game Over.</p>
+                </section>
+            </main>
+        </section>
+
+        <section id="option-2" class="option-section">
+            <main class="app">
+                <header><h1>Game 2: Whac A Mole</h1></header>
+                <section class="game-card">
+                    <div id="mole-hud" style="text-align:center;margin-bottom:8px">Score: <span id="mole-score">0</span></div>
+                    <div id="board-mole"></div>
+                    <p class="hint">Tap / Click the mole when it appears. Avoid the plant.</p>
+                </section>
+            </main>
+        </section>
+
+        <section id="option-3" class="option-section">
+            <main class="app">
+                <header><h1>Game 3: Flappy Bird</h1></header>
+                <section class="game-card">
+                    <div class="game-wrap">
+                        <canvas id="board-flappy" width="360" height="640" aria-label="Flappy Bird board"></canvas>
+                    </div>
+                    <p class="hint">Press Space or Up to flap. Survive the pipes.</p>
+                </section>
+            </main>
+        </section>
+
+        <script>
+            // Show the selected option section and hide the others
+            function showOptionSection(n) {
+                const sections = document.querySelectorAll('.option-section');
+                sections.forEach(s => s.style.display = 'none');
+                const sel = document.getElementById('option-' + n);
+                if (sel) {
+                    sel.style.display = 'block';
+                    // scroll into view smoothly
+                    sel.scrollIntoView({behavior: 'very smooth', block: 'start'});
+                }
+            }
+            // Optionally show the first option by default
+            // showOptionSection(1);
+        </script>
+
+        <script>
+        (function(){
+// Whac A Mole game (scoped)
+let currMoleTile;
+let currPlantTile;
+let moleScore = 0;
+let moleGameOver = false;
+
+window.addEventListener('load', function() {
+    // only initialize if mole board exists
+    const board = document.getElementById('board-mole');
+    if (!board) return;
+    setMoleGame();
+});
+
+function setMoleGame() {
+    const board = document.getElementById('board-mole');
+    const scoreEl = document.getElementById('mole-score');
+    
+    // clear board
+    board.innerHTML = '';
+    for (let i = 0; i < 9; i++) {
+        let tile = document.createElement('div');
+        tile.id = 'm' + i.toString();
+        tile.className = 'mole-tile';
+        tile.addEventListener('click', function(){ selectTile(this, scoreEl); });
+        board.appendChild(tile);
+    }
+    setInterval(setMole, 1000);
+    setInterval(setPlant, 2000);
+}
+
+function getRandomTile() {
+    let num = Math.floor(Math.random() * 9);
+    return num.toString();
+}
+
+function setMole() {
+    if (moleGameOver) return;
+    if (currMoleTile) currMoleTile.innerHTML = '';
+    let mole = document.createElement('img');
+    mole.src = './monty-mole.png';
+    let num = getRandomTile();
+    const candidate = document.getElementById('m' + num);
+    if (!candidate) return;
+    if (currPlantTile && currPlantTile.id === candidate.id) return;
+    currMoleTile = candidate;
+    currMoleTile.appendChild(mole);
+}
+
+function setPlant() {
+    if (moleGameOver) return;
+    if (currPlantTile) currPlantTile.innerHTML = '';
+    let plant = document.createElement('img');
+    plant.src = './piranha-plant.png';
+    let num = getRandomTile();
+    const candidate = document.getElementById('m' + num);
+    if (!candidate) return;
+    if (currMoleTile && currMoleTile.id === candidate.id) return;
+    currPlantTile = candidate;
+    currPlantTile.appendChild(plant);
+}
+
+function selectTile(tile, scoreEl) {
+    if (moleGameOver) return;
+    if (tile === currMoleTile) {
+        moleScore += 10;
+        scoreEl.innerText = moleScore.toString();
+    } else if (tile === currPlantTile) {
+        moleGameOver = true;
+        scoreEl.innerText = 'GAME OVER: ' + moleScore.toString();
+    }
+}
+        })();
+            </script>
+<script>
+//board
+let board;
+let boardWidth = 360;
+let boardHeight = 640;
+let context;
+
+//bird
+let birdWidth = 34; //width/height ratio = 408/228 = 17/12
+let birdHeight = 24;
+let birdX = boardWidth/8;
+let birdY = boardHeight/2;
+let birdImg;
+
+let bird = {
+    x : birdX,
+    y : birdY,
+    width : birdWidth,
+    height : birdHeight
+}
+
+//pipes
+let pipeArray = [];
+let pipeWidth = 64; //width/height ratio = 384/3072 = 1/8
+let pipeHeight = 512;
+let pipeX = boardWidth;
+let pipeY = 0;
+
+let topPipeImg;
+let bottomPipeImg;
+
+//physics
+let velocityX = -2; //pipes moving left speed
+let velocityY = 0; //bird jump speed
+let gravity = 0.3;
+
+let gameOver = false;
+let score = 0;
+
+window.addEventListener('load', function() {
+    // separate board for flappy to avoid conflicts with doodle
+    const fb = document.getElementById("board-flappy");
+    if (!fb) return; // not on this page
+    board = fb;
+    board.height = boardHeight;
+    board.width = boardWidth;
+    context = board.getContext("2d"); //used for drawing on the board
+
+    //load images
+    birdImg = new Image();
+    birdImg.src = "./flappybird.png";
+
+    topPipeImg = new Image();
+    topPipeImg.src = "./toppipe.png";
+
+    bottomPipeImg = new Image();
+    bottomPipeImg.src = "./bottompipe.png";
+
+    requestAnimationFrame(updateFlappy);
+    setInterval(placePipes, 1500); //every 1.5 seconds
+    document.addEventListener("keydown", moveBird);
+});
+
+function updateFlappy() {
+    requestAnimationFrame(updateFlappy);
+    if (gameOver) {
+        return;
+    }
+    context.clearRect(0, 0, board.width, board.height);
+
+    //bird
+    velocityY += gravity;
+    bird.y = Math.max(bird.y + velocityY, 0); //apply gravity to current bird.y, limit the bird.y to top of the canvas
+    context.drawImage(birdImg, bird.x, bird.y, bird.width, bird.height);
+
+    if (bird.y > board.height) {
+        gameOver = true;
+    }
+
+    //pipes
+    for (let i = 0; i < pipeArray.length; i++) {
+        let pipe = pipeArray[i];
+        pipe.x += velocityX;
+        context.drawImage(pipe.img, pipe.x, pipe.y, pipe.width, pipe.height);
+
+        if (!pipe.passed && bird.x > pipe.x + pipe.width) {
+            score += 0.5; //0.5 because there are 2 pipes! so 0.5*2 = 1, 1 for each set of pipes
+            pipe.passed = true;
+        }
+
+        if (detectCollision(bird, pipe)) {
+            gameOver = true;
+        }
+    }
+
+    //clear pipes
+    while (pipeArray.length > 0 && pipeArray[0].x < -pipeWidth) {
+        pipeArray.shift(); //removes first element from the array
+    }
+
+    //score
+    context.fillStyle = "white";
+    context.font="45px sans-serif";
+    context.fillText(score, 5, 45);
+
+    if (gameOver) {
+        context.fillText("GAME OVER", 5, 90);
+    }
+}
+
+function placePipes() {
+    if (gameOver) {
+        return;
+    }
+
+    let randomPipeY = pipeY - pipeHeight/4 - Math.random()*(pipeHeight/2);
+    let openingSpace = board.height/4;
+
+    let topPipe = {
+        img : topPipeImg,
+        x : pipeX,
+        y : randomPipeY,
+        width : pipeWidth,
+        height : pipeHeight,
+        passed : false
+    }
+    pipeArray.push(topPipe);
+
+    let bottomPipe = {
+        img : bottomPipeImg,
+        x : pipeX,
+        y : randomPipeY + pipeHeight + openingSpace,
+        width : pipeWidth,
+        height : pipeHeight,
+        passed : false
+    }
+    pipeArray.push(bottomPipe);
+}
+
+function moveBird(e) {
+    if (e.code == "Space" || e.code == "ArrowUp" || e.code == "KeyX") {
+        //jump
+        velocityY = -6;
+
+        //reset game
+        if (gameOver) {
+            bird.y = birdY;
+            pipeArray = [];
+            score = 0;
+            gameOver = false;
+        }
+    }
+}
+
+function detectCollision(a, b) {
+    return a.x < b.x + b.width &&   //a's top left corner doesn't reach b's top right corner
+           a.x + a.width > b.x &&   //a's top right corner passes b's top left corner
+           a.y < b.y + b.height &&  //a's top left corner doesn't reach b's bottom left corner
+           a.y + a.height > b.y;    //a's bottom left corner passes b's top left corner
+}
+
+        </script>
+
+    <script>
+(function(){
+//board
+let board;
+let boardWidth = 360;
+let boardHeight = 576;
+let context;
+
+//doodler
+let doodlerWidth = 46;
+let doodlerHeight = 46;
+let doodlerX = boardWidth/2 - doodlerWidth/2;
+let doodlerY = boardHeight*7/8 - doodlerHeight;
+let doodlerRightImg;
+let doodlerLeftImg;
+
+let doodler = {
+    img : null,
+    x : doodlerX,
+    y : doodlerY,
+    width : doodlerWidth,
+    height : doodlerHeight
+}
+
+//physics
+let velocityX = 0; 
+let velocityY = 0; //doodler jump speed
+let initialVelocityY = -4; //starting velocity Y
+let gravity = 0.07;
+
+//platforms
+let platformArray = [];
+let platformWidth = 60;
+let platformHeight = 18;
+let platformImg;
+
+let score = 0;
+let maxScore = 0;
+let gameOver = false;
+
+window.onload = function() {
+    board = document.getElementById("board");
+    board.height = boardHeight;
+    board.width = boardWidth;
+    context = board.getContext("2d"); //used for drawing on the board
+
+    //draw doodler
+    // context.fillStyle = "green";
+    // context.fillRect(doodler.x, doodler.y, doodler.width, doodler.height);
+
+    //load images
+    doodlerRightImg = new Image();
+    doodlerRightImg.src = "./doodler-right.png";
+    doodler.img = doodlerRightImg;
+    doodlerRightImg.onload = function() {
+        context.drawImage(doodler.img, doodler.x, doodler.y, doodler.width, doodler.height);
+    }
+
+    doodlerLeftImg = new Image();
+    doodlerLeftImg.src = "./doodler-left.png";
+
+    platformImg = new Image();
+    platformImg.src = "./platform.png";
+
+    velocityY = initialVelocityY;
+    placePlatforms();
+    requestAnimationFrame(update);
+    document.addEventListener("keydown", moveDoodler);
+}
+
+function update() {
+    requestAnimationFrame(update);
+    if (gameOver) {
+        return;
+    }
+    context.clearRect(0, 0, board.width, board.height);
+
+    //doodler
+    doodler.x += velocityX;
+    if (doodler.x > boardWidth) {
+        doodler.x = 0;
+    }
+    else if (doodler.x + doodler.width < 0) {
+        doodler.x = boardWidth;
+    }
+
+    velocityY += gravity;
+    doodler.y += velocityY;
+    if (doodler.y > board.height) {
+        gameOver = true;
+    }
+    context.drawImage(doodler.img, doodler.x, doodler.y, doodler.width, doodler.height);
+
+    //platforms
+    for (let i = 0; i < platformArray.length; i++) {
+        let platform = platformArray[i];
+        if (velocityY < 0 && doodler.y < boardHeight*3/4) {
+            platform.y -= initialVelocityY; //slide platform down
+        }
+        if (detectCollision(doodler, platform) && velocityY >= 0) {
+            velocityY = initialVelocityY; //jump
+        }
+        context.drawImage(platform.img, platform.x, platform.y, platform.width, platform.height);
+    }
+
+    // clear platforms and add new platform
+    while (platformArray.length > 0 && platformArray[0].y >= boardHeight) {
+        platformArray.shift(); //removes first element from the array
+        newPlatform(); //replace with new platform on top
+    }
+
+    //score
+    updateScore();
+    context.fillStyle = "black";
+    context.font = "16px sans-serif";
+    context.fillText(score, 5, 20);
+
+    if (gameOver) {
+        context.fillText("Game Over: Press 'Space' to Restart", boardWidth/7, boardHeight*7/8);
+    }
+}
+
+function moveDoodler(e) {
+    if (e.code == "ArrowRight" || e.code == "KeyD") { //move right
+        velocityX = 4;
+        doodler.img = doodlerRightImg;
+    }
+    else if (e.code == "ArrowLeft" || e.code == "KeyA") { //move left
+        velocityX = -4;
+        doodler.img = doodlerLeftImg;
+    }
+    else if (e.code == "Space" && gameOver) {
+        //reset
+        doodler = {
+            img : doodlerRightImg,
+            x : doodlerX,
+            y : doodlerY,
+            width : doodlerWidth,
+            height : doodlerHeight
+        }
+
+        velocityX = 0;
+        velocityY = initialVelocityY;
+        score = 0;
+        maxScore = 0;
+        gameOver = false;
+        placePlatforms();
+    }
+}
+
+function placePlatforms() {
+    platformArray = [];
+
+    //starting platforms
+    let platform = {
+        img : platformImg,
+        x : boardWidth/2,
+        y : boardHeight - 50,
+        width : platformWidth,
+        height : platformHeight
+    }
+
+    platformArray.push(platform);
+
+    // platform = {
+    //     img : platformImg,
+    //     x : boardWidth/2,
+    //     y : boardHeight - 150,
+    //     width : platformWidth,
+    //     height : platformHeight
+    // }
+    // platformArray.push(platform);
+
+    for (let i = 0; i < 6; i++) {
+        let randomX = Math.floor(Math.random() * boardWidth*3/4); //(0-1) * boardWidth*3/4
+        let platform = {
+            img : platformImg,
+            x : randomX,
+            y : boardHeight - 75*i - 150,
+            width : platformWidth,
+            height : platformHeight
+        }
+    
+        platformArray.push(platform);
+    }
+}
+
+function newPlatform() {
+    let randomX = Math.floor(Math.random() * boardWidth*3/4); //(0-1) * boardWidth*3/4
+    let platform = {
+        img : platformImg,
+        x : randomX,
+        y : -platformHeight,
+        width : platformWidth,
+        height : platformHeight
+    }
+
+    platformArray.push(platform);
+}
+
+function detectCollision(a, b) {
+    return a.x < b.x + b.width &&   //a's top left corner doesn't reach b's top right corner
+           a.x + a.width > b.x &&   //a's top right corner passes b's top left corner
+           a.y < b.y + b.height &&  //a's top left corner doesn't reach b's bottom left corner
+           a.y + a.height > b.y;    //a's bottom left corner passes b's top left corner
+}
+
+function updateScore() {
+    let points = Math.floor(5*Math.random());
+    if (velocityY < 0) { //negative going up
+        maxScore += points;
+        if (score < maxScore) {
+            score = maxScore;
+        }
+    }
+    else if (velocityY >= 0) {
+        maxScore -= points;
+    }
+}
+})();
+        </script>
+    </body>
+</html>
